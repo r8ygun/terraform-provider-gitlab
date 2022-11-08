@@ -600,10 +600,14 @@ func testAccCreateProjectFile(t *testing.T, projectID int, fileContent string, f
 }
 
 func testAccCreateProjectFeatureFlag(t *testing.T, projectID int) *gitlab.ProjectFeatureFlag {
+	randBool := func() bool {
+		return acctest.RandInt()%2 == 0
+	}
+
 	flag, _, err := testGitlabClient.ProjectFeatureFlags.CreateProjectFeatureFlag(projectID, &gitlab.CreateProjectFeatureFlagOptions{
 		Name:        gitlab.String(fmt.Sprintf("feature_flag_name_%d", acctest.RandInt())),
 		Description: gitlab.String(acctest.RandString(30)),
-		Active:      gitlab.Bool(acctest.RandBool()),
+		Active:      gitlab.Bool(randBool()),
 	})
 	if err != nil {
 		t.Fatal(err)
