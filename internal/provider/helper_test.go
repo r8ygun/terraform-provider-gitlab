@@ -599,16 +599,50 @@ func testAccCreateProjectFile(t *testing.T, projectID int, fileContent string, f
 	return file
 }
 
-func testAccCreateProjectFeatureFlag(t *testing.T, projectID int, flagName string) *gitlab.ProjectFeatureFlag {
-	randBool := func() bool {
-		return acctest.RandInt()%2 == 0
+type CreateFeatureFlagOption func(*gitlab.CreateProjectFeatureFlagOptions)
+
+func withFlagName(name string) CreateFeatureFlagOption {
+	return func(opt *gitlab.CreateProjectFeatureFlagOptions) {
+		opt.Name = &name
+	}
+}
+
+func withFlagDescription(description string) CreateFeatureFlagOption {
+	return func(opt *gitlab.CreateProjectFeatureFlagOptions) {
+		opt.Description = &description
+	}
+}
+
+func withFlagActive(active bool) CreateFeatureFlagOption {
+	return func(opt *gitlab.CreateProjectFeatureFlagOptions) {
+		opt.Active = &active
+	}
+}
+
+func withFlagVersion(version string) CreateFeatureFlagOption {
+	return func(opt *gitlab.CreateProjectFeatureFlagOptions) {
+		opt.Version = &version
+	}
+}
+
+func withFlagStrategy(strategy *gitlab.FeatureFlagStrategyOptions) CreateFeatureFlagOption {
+	return func(opt *gitlab.CreateProjectFeatureFlagOptions) {
+		if opt.Strategies == nil {
+			strategies := make([]*gitlab.FeatureFlagStrategyOptions, 0)
+			opt.Strategies = &strategies
+		}
+		newStrategies := append(*opt.Strategies, strategy)
+		opt.Strategies = &newStrategies
+	}
+}
+
+func testAccCreateProjectFeatureFlag(t *testing.T, projectID int, opts ...CreateFeatureFlagOption) *gitlab.ProjectFeatureFlag {
+	createFlagOpts := &gitlab.CreateProjectFeatureFlagOptions{}
+	for _, o := range opts {
+		o(createFlagOpts)
 	}
 
-	flag, _, err := testGitlabClient.ProjectFeatureFlags.CreateProjectFeatureFlag(projectID, &gitlab.CreateProjectFeatureFlagOptions{
-		Name:        gitlab.String(flagName),
-		Description: gitlab.String(acctest.RandString(30)),
-		Active:      gitlab.Bool(randBool()),
-	})
+	flag, _, err := testGitlabClient.ProjectFeatureFlags.CreateProjectFeatureFlag(projectID, createFlagOpts)
 	if err != nil {
 		t.Fatal(err)
 	}

@@ -77,7 +77,7 @@ func gitlabProjectFeatureFlagStrategySchema() map[string]*schema.Schema {
 	return map[string]*schema.Schema{
 		"id": {
 			Description: "The ID of the strategy.",
-			Type:        schema.TypeInt,
+			Type:        schema.TypeString,
 		},
 		"name": {
 			Description: "The strategy name.",
@@ -85,7 +85,23 @@ func gitlabProjectFeatureFlagStrategySchema() map[string]*schema.Schema {
 		},
 		"parameters": {
 			Description: "Parameters given to the strategy",
-			Type:        schema.TypeMap,
+			Type:        schema.TypeSet,
+			Elem: &schema.Resource{
+				Schema: map[string]*schema.Schema{
+					"user_ids": {
+						Description: "The UserIds strategy type",
+						Type:        schema.TypeString,
+					},
+					"group_id": {
+						Description: "The GroupId strategy type",
+						Type:        schema.TypeString,
+					},
+					"percentage": {
+						Description: "The Percentage strategy type",
+						Type:        schema.TypeString,
+					},
+				},
+			},
 		},
 		"scopes": {
 			Description: "The scopes for the strategy.",
@@ -115,8 +131,16 @@ func gitlabProjectFeatureFlagToStateMap(variable *gitlab.ProjectFeatureFlag) map
 		stateMap["scopes"] = variable.Scopes
 	}
 	if variable.Strategies != nil {
-		stateMap["strategies"] = variable.Strategies
+		stateMap["strategies"] = flattenStrategies(variable.Strategies)
 	}
 
 	return stateMap
+}
+
+func flattenStrategies(strategies []*gitlab.ProjectFeatureFlagStrategy) []map[string]interface{} {
+	if len(strategies) == 0 {
+		return []map[string]interface{}{}
+	}
+
+	// Map the strategy to the lowercase equivalent - parameters, etc
 }
